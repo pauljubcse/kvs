@@ -236,3 +236,46 @@ func TestSkipListRank(t *testing.T) {
 	}
 	fmt.Printf("Rank(%d) in an empty list = %d; expected 0\n", 3, rank)
 }
+func TestSkipListRank2(t *testing.T) {
+	// Initialize a new skip list
+	sl := NewSkipList()
+
+	// Insert elements into the skip list
+	elements := []struct {
+		key   int
+		value string
+	}{
+		{1, "one"},
+		{2, "two"},
+		{3, "three"},
+		{5, "five"},
+		{7, "seven"},
+	}
+	for _, elem := range elements {
+		sl.Insert(elem.key, elem.value)
+	}
+
+	// Define test cases for rank
+	tests := []struct {
+		key          int
+		expectedRank int
+	}{
+		{1, 0},
+		{2, 1},
+		{3, 2},
+		{4, 3},  // Non-existent element, should return rank as if it was present
+		{5, 3},
+		{6, 4},  // Non-existent element, should return rank as if it was present
+		{7, 4},
+		{8, 5},  // Non-existent element, should return rank as if it was present
+	}
+
+	for _, tt := range tests {
+		t.Run(fmt.Sprintf("rank_of_%d", tt.key), func(t *testing.T) {
+			rank := sl.Rank(tt.key)
+			if rank != tt.expectedRank {
+				t.Errorf("Rank of %d = %d; want %d", tt.key, rank, tt.expectedRank)
+			}
+		})
+	}
+}
