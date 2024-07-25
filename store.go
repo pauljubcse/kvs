@@ -89,7 +89,7 @@ func (s *Store) Increment(domain, key string) error {
 	defer d.mu.Unlock()
 	val, err := strconv.Atoi(d.stringStore[key])
 	if (err != nil) {
-		return fmt.Errorf("value is not an integer")
+		return fmt.Errorf("%s value is not an integer", d.stringStore[key])
 	}
 	d.stringStore[key] = strconv.Itoa(val + 1)
 	return nil
