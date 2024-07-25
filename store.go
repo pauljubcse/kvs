@@ -75,6 +75,38 @@ func (s *Store) GetString(domain, key string) (string, error) {
 	return value, nil
 }
 
+func (s *Store) Increment(domain, key string) error {
+	d, ok := s.domains[domain]
+	if (!ok) {
+		return fmt.Errorf("domain not found")
+	}
+
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	val, err := strconv.Atoi(d.stringStore[key])
+	if (err != nil) {
+		return fmt.Errorf("value is not an integer")
+	}
+	d.stringStore[key] = strconv.Itoa(val + 1)
+	return nil
+}
+
+func (s *Store) Decrement(domain, key string) error {
+	d, ok := s.domains[domain]
+	if (!ok) {
+		return fmt.Errorf("domain not found")
+	}
+
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	val, err := strconv.Atoi(d.stringStore[key])
+	if (err != nil) {
+		return fmt.Errorf("value is not an integer")
+	}
+	d.stringStore[key] = strconv.Itoa(val - 1)
+	return nil
+}
+
 func (s *Store) InsertToSkipList(domain, slkey, key, value string) error {
 	intKey, err := strconv.ParseInt(key, 10, 64)
 	if err != nil {
@@ -269,6 +301,20 @@ func (s *Store) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 		// 	} else {
 		// 		resp = Response{Status: "success", Values: values}
 		// 	}
+		case "increment":
+			err := s.Increment(req.Domain, req.Key)
+			if (err != nil) {
+				resp = Response{Status: "error", Message: err.Error()}
+			} else {
+				resp = Response{Status: "success"}
+			}
+		case "decrement":
+			err := s.Decrement(req.Domain, req.Key)
+			if (err != nil) {
+				resp = Response{Status: "error", Message: err.Error()}
+			} else {
+				resp = Response{Status: "success"}
+			}
 		case "search_skiplist":
 			value, err := s.SearchInSkipList(req.Domain, req.SLKey, req.Key)
 			if err != nil {
