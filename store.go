@@ -1,10 +1,13 @@
 package kvs
 
 import (
+	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"strconv"
+	"time"
 
 	//"sync"
 
@@ -335,10 +338,15 @@ func (s *Store) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func StartServer(urlStr string) error {
+
+type Server struct {
+	httpServer *http.Server
+}
+
+func StartServer(urlStr string) (*Server, error) {
 	u, err := url.Parse(urlStr)
 	if err != nil {
-		return fmt.Errorf("invalid URL: %v", err)
+		return nil, fmt.Errorf("invalid URL: %v", err)
 	}
 
 	store := NewStore()
@@ -346,6 +354,20 @@ func StartServer(urlStr string) error {
 		store.HandleWebSocket(w, r)
 	})
 
-	fmt.Printf("Starting server on %s...\n", u.Host)
-	return http.ListenAndServe(u.Host, nil)
+	server := &http.Server{Addr: u.Host, Handler: nil}
+
+	go func() {
+		fmt.Printf("Starting server on %s...\n", u.Host)
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("ListenAndServe(): %v", err)
+		}
+	}()
+
+	return &Server{httpServer: server}, nil
+}
+
+func (s *Server) CloseServer() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	return s.httpServer.Shutdown(ctx)
 }
