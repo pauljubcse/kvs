@@ -1,4 +1,4 @@
-module kvs
+module github.com/pauljubcse/kvs
 
 go 1.22.5
 
