@@ -145,3 +145,18 @@ func (sl *SkipList) PrintLevels() {
 		fmt.Println()
 	}
 }
+
+func (sl *SkipList) Rank(key int) int {
+	count := 0
+	x := sl.header
+
+	// Traverse from the top level to the bottom level
+	for i := sl.level - 1; i >= 0; i-- {
+		for x.forward[i] != nil && x.forward[i].key < key {
+			count += 1 // Count this element
+			x = x.forward[i]
+		}
+	}
+
+	return count
+}

@@ -232,7 +232,30 @@ func (s *Store) SearchInSkipList(domain, slkey, key string) (string, error) {
 	}
 	return value, nil
 }
+func (s *Store) RankInSkipList(domain, slkey, key string) (string, error) {
+	intKey, err := strconv.ParseInt(key, 10, 64)
+	if err != nil {
+		return "", fmt.Errorf("key must be integer")
+	}
 
+	//s.mu.RLock()
+	d, ok := s.domains[domain]
+	//s.mu.RUnlock()
+	if !ok {
+		return "", fmt.Errorf("domain not found")
+	}
+
+	d.mu.RLock()
+	defer d.mu.RUnlock()
+	
+	sl, ok := d.skipListStore[slkey]
+	if !ok {
+		return "", fmt.Errorf("skip list not found")
+	}
+
+	value := sl.Rank(int(intKey))
+	return strconv.Itoa(value), nil
+}
 // WebSocket connection upgrade
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
@@ -298,6 +321,13 @@ func (s *Store) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 			} else {
 				resp = Response{Status: "success"}
 			}
+		case "rank_skiplist":
+			r, err := s.RankInSkipList(req.Domain, req.SLKey, req.Key)
+			if err != nil {
+				resp = Response{Status: "error", Message: err.Error()}
+			} else {
+				resp = Response{Status: "success", Value: r}
+			}	
 		// case "get_all_skiplist":
 		// 	values, err := s.GetAllValuesFromSkipList(req.Domain, req.SLKey)
 		// 	if err != nil {
