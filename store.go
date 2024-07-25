@@ -3,6 +3,7 @@ package kvs
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 
 	//"sync"
@@ -332,4 +333,19 @@ func (s *Store) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 	}
+}
+
+func StartServer(urlStr string) error {
+	u, err := url.Parse(urlStr)
+	if err != nil {
+		return fmt.Errorf("invalid URL: %v", err)
+	}
+
+	store := NewStore()
+	http.HandleFunc(u.Path, func(w http.ResponseWriter, r *http.Request) {
+		store.HandleWebSocket(w, r)
+	})
+
+	fmt.Printf("Starting server on %s...\n", u.Host)
+	return http.ListenAndServe(u.Host, nil)
 }
